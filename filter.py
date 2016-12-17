@@ -1,7 +1,7 @@
 import os
 import pickle
 from email import message_from_string
-from getpass import getpass
+from getpass import getpass, getuser
 from imaplib import IMAP4_SSL
 import json
 
@@ -112,7 +112,11 @@ class Filter:
         self.mail.logout()
 
 if __name__ == '__main__':
-    username = raw_input('Enter your email: ')
+    username = raw_input('Email: ')
     password = getpass()
+    only_new = raw_input('Do you want to filter only new mail? y/n ')
     with Filter(username, password) as filter:
-        filter.filter_new()
+        if only_new == 'y':
+            filter.filter_new()
+        else:
+            filter.filter_all()
