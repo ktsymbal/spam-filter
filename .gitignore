@@ -1,2 +1,4 @@
 .idea/
 enron1/
+processed_mail.json
+*.pyc

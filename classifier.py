@@ -1,4 +1,7 @@
 from __future__ import print_function, division
+
+import pickle
+
 import nltk
 import os
 import random
@@ -11,10 +14,21 @@ from settings import BASEDIR
 
 
 class Classifier:
+    classifier_file = BASEDIR + '/classifier'
     stoplist = stopwords.words('english')
 
     def __init__(self):
         self.classifier = self._train(self._get_training_set(), 0.8)
+
+    @classmethod
+    def get_trained_classifier(cls):
+        if os.path.isfile(cls.classifier_file):
+            with open(cls.classifier_file, 'rb') as f:
+                return pickle.load(f)
+        classifier = cls()
+        with open(cls.classifier_file, 'wb') as f:
+            pickle.dump(classifier, f)
+        return classifier
 
     @staticmethod
     def _get_training_list(folder):
@@ -40,8 +54,8 @@ class Classifier:
     def _get_training_set(self):
         spam = self._get_training_list(BASEDIR + '/enron1/spam/')
         ham = self._get_training_list(BASEDIR + '/enron1/ham/')
-        all_emails = [(email, 'spam/') for email in spam]
-        all_emails += [(email, 'ham/') for email in ham]
+        all_emails = [(email, 'spam') for email in spam]
+        all_emails += [(email, 'ham') for email in ham]
         random.shuffle(all_emails)
         return [(self._get_features(email, ''), label) for (email, label) in all_emails]
 
@@ -57,19 +71,8 @@ class Classifier:
         print('Accuracy of the test set = ' + str(classify.accuracy(classifier, test_set)))
         classifier.show_most_informative_features(20)
 
-    @staticmethod
-    def _get_message_text(message):
-        maintype = message.get_content_maintype()
-        if maintype == 'multipart':
-            for part in message.get_payload():
-                if part.get_content_maintype() == 'text':
-                    return part.get_payload()
-        elif maintype == 'text':
-            return message.get_payload()
-
     def classify(self, message):
-        body = self._get_message_text(message)
         result = "ham"
-        if body:
-            result = self.classifier.classify(self._get_features(body, ""))
+        if message:
+            result = self.classifier.classify(self._get_features(message, ""))
         return result
